@@ -1,3 +1,4 @@
+import re
 import tkinter as tk
 from tkinter import messagebox
 from datetime import datetime
@@ -11,14 +12,19 @@ from region_selector import select_region
 
 # ===== スクショ保存・PDF作成 =====
 
+def sanitize_filename(filename):
+    # ファイル名に使えない文字を除去
+    return re.sub(r'[\\/:*?"<>|]', '_', filename)
+
 def get_zero_padding(n):
     return len(str(n))
 
 def make_output_folder():
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-    path = os.path.join("output", timestamp, "images")
-    os.makedirs(path, exist_ok=True)
-    return path, timestamp
+    output_dir = os.path.join("output", timestamp)
+    images_dir = os.path.join(output_dir, "images")
+    os.makedirs(images_dir, exist_ok=True)
+    return output_dir, images_dir, timestamp
 
 def take_screenshots(region, total_pages, delay, countdown, outdir):
     print(f"📦 出力先: {outdir}")
@@ -39,13 +45,17 @@ def take_screenshots(region, total_pages, delay, countdown, outdir):
             pyautogui.press("right")
 
 def images_to_pdf(image_dir, output_pdf_path):
-    image_files = sorted(f for f in os.listdir(image_dir) if f.lower().endswith(".png"))
-    image_paths = [os.path.join(image_dir, f) for f in image_files]
-    images = [Image.open(p).convert("RGB") for p in image_paths]
-    first, rest = images[0], images[1:]
-    first.save(output_pdf_path, save_all=True, append_images=rest)
-    print(f"📕 PDF作成完了: {output_pdf_path}")
-
+    try:
+        image_files = sorted(f for f in os.listdir(image_dir) if f.lower().endswith(".png"))
+        image_paths = [os.path.join(image_dir, f) for f in image_files]
+        images = [Image.open(p).convert("RGB") for p in image_paths]
+        if not images:
+            raise ValueError("画像がありません。")
+        first, rest = images[0], images[1:]
+        first.save(output_pdf_path, save_all=True, append_images=rest)
+        print(f"📕 PDF作成完了: {output_pdf_path}")
+    except Exception as e:
+        raise RuntimeError(f"PDF作成中にエラー: {e}")
 # ===== GUI本体 =====
 
 class App:
@@ -119,21 +129,23 @@ class App:
             return
 
         pdfname = self.pdf_name_entry.get().strip()
-        outdir, timestamp = make_output_folder()
+        output_dir, image_dir, timestamp = make_output_folder()
         if not pdfname:
             pdfname = timestamp
+        pdfname = sanitize_filename(pdfname)
         if not pdfname.lower().endswith(".pdf"):
             pdfname += ".pdf"
 
-        image_dir = os.path.join(outdir, "images")
-        os.makedirs(image_dir, exist_ok=True)
-
-        take_screenshots(self.region, total_pages, delay, countdown, image_dir)
-        images_to_pdf(image_dir, os.path.join(outdir, pdfname))
+        try:
+            take_screenshots(self.region, total_pages, delay, countdown, image_dir)
+            images_to_pdf(image_dir, os.path.join(output_dir, pdfname))
+        except Exception as e:
+            messagebox.showerror("エラー", f"処理中にエラーが発生しました: {e}")
+            return
 
         if self.open_folder_var.get():
             try:
-                subprocess.run(["open", outdir])
+                subprocess.run(["open", output_dir])
             except Exception as e:
                 print("フォルダを開けませんでした:", e)
 
