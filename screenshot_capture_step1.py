@@ -34,11 +34,16 @@ def make_output_folder():
 def take_screenshots(region, total_pages, delay, outdir):
     pad_len = get_zero_padding(total_pages)
     for i in range(1, total_pages + 1):
-        time.sleep(delay)
+        time.sleep(delay)  # 📚 ページ切替の準備時間
+
         screenshot = ImageGrab.grab(bbox=region)
         filename = f"page_{str(i).zfill(pad_len)}.png"
         screenshot.save(os.path.join(outdir, filename))
-        print(f"Saved: {filename}")
+        print(f"📸 Saved: {filename}")
+
+        if i != total_pages:
+            pyautogui.press('right')  # ⏩ ページめくり
+            print(f"➡️ ページを送信 (→)")
 
 # main処理
 def main():
@@ -47,16 +52,24 @@ def main():
     root.withdraw()
     total_pages = simpledialog.askinteger("ページ数", "何ページ分キャプチャしますか？", parent=root)
     delay = simpledialog.askfloat("ディレイ", "1ページごとの待機秒数は？", parent=root)
-    root.destroy()  # これ重要！
-
+    root.destroy()
     # 範囲選択（背景は静止画）
     region = select_region()
 
     # スクショ前にユーザーに明示的に操作させる
     print("\n📌 範囲選択が完了しました。")
-    print("🖱 Kindleウィンドウを前面に出してください（Cmd + Tab など）。")
+    # activate_kindle()  # Kindleをアクティブにする
+    # print("🖱 Kindleウィンドウを前面に出しました。")
     input("✔️ 準備ができたらEnterキーを押してスクショを開始します > ")
+    print("🖱 カウントダウン中にKindleウィンドウを前面に出してください（Cmd + Tab など）。")
 
+    # カウントダウンで自動開始
+    for i in reversed(range(1, 4)):
+        print(f"⏳ {i}...", end="", flush=True)
+        time.sleep(1)
+        print("")
+
+    print("🚀 スクショ開始！")
     # 保存処理
     outdir = make_output_folder()
     take_screenshots(region, total_pages, delay, outdir)
