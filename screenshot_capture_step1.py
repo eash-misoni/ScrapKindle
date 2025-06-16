@@ -63,3 +63,17 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    # 直近のタイムスタンプフォルダを見つけてPDF化
+    base_dir = "output"
+    all_runs = sorted(os.listdir(base_dir))
+    if not all_runs:
+        print("❌ スクショフォルダがありません")
+        exit()
+
+    latest = os.path.join(base_dir, all_runs[-1])
+    image_dir = os.path.join(latest, "images")
+    output_pdf = os.path.join(latest, "book.pdf")
+
+    from convert_to_pdf import images_to_pdf
+    images_to_pdf(image_dir, output_pdf)
