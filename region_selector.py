@@ -8,10 +8,11 @@ def select_region():
 
     # Tkウィンドウ初期化
     root = tk.Tk()
-    root.update()  # 必須！
+    root.withdraw()
     root.overrideredirect(True)
     root.attributes("-topmost", True)
     root.geometry(f"{screen_width}x{screen_height}+0+0")
+    root.deiconify()
 
     # Canvas初期化（この段階でrootが完全に構成済）
     canvas = tk.Canvas(root, width=screen_width, height=screen_height, cursor="cross")
@@ -39,7 +40,10 @@ def select_region():
     def on_mouse_up(event):
         x1, y1 = start_x, start_y
         x2, y2 = event.x, event.y
-        region["box"] = (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
+        if abs(x2 - x1) < 5 or abs(y2 - y1) < 5:
+            region["box"] = None
+        else:
+            region["box"] = (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
         root.quit()
 
     canvas.bind("<ButtonPress-1>", on_mouse_down)
