@@ -31,7 +31,6 @@ def make_output_folder():
 
 # スクリーンショットを撮って保存
 def take_screenshots(region, total_pages, delay, outdir):
-    print(f"スクリーンショットを{total_pages}ページ分撮影します...")
     pad_len = get_zero_padding(total_pages)
     for i in range(1, total_pages + 1):
         time.sleep(delay)
