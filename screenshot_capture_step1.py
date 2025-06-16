@@ -6,7 +6,8 @@ import tkinter as tk
 from tkinter import simpledialog
 from PIL import ImageGrab
 
-from region_selector import select_region
+# from region_selector import select_region
+from region_selector_v2 import select_region
 
 
 # GUIでスクリーンショット範囲を選ぶ
@@ -44,11 +45,17 @@ def main():
     # GUI入力
     root = tk.Tk()
     root.withdraw()
-    total_pages = simpledialog.askinteger("ページ数", "何ページ分キャプチャしますか？")
-    delay = simpledialog.askfloat("ディレイ", "1ページごとの待機秒数は？")
+    total_pages = simpledialog.askinteger("ページ数", "何ページ分キャプチャしますか？", parent=root)
+    delay = simpledialog.askfloat("ディレイ", "1ページごとの待機秒数は？", parent=root)
+    root.destroy()  # これ重要！
 
-    # 正しい矩形選択を呼び出す
+    # 範囲選択（背景は静止画）
     region = select_region()
+
+    # スクショ前にユーザーに明示的に操作させる
+    print("\n📌 範囲選択が完了しました。")
+    print("🖱 Kindleウィンドウを前面に出してください（Cmd + Tab など）。")
+    input("✔️ 準備ができたらEnterキーを押してスクショを開始します > ")
 
     # 保存処理
     outdir = make_output_folder()
