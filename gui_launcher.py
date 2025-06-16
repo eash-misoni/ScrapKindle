@@ -7,7 +7,7 @@ from PIL import ImageGrab, Image
 import subprocess
 import pyautogui
 
-from region_selector_v2 import select_region
+from region_selector import select_region
 
 # ===== スクショ保存・PDF作成 =====
 
