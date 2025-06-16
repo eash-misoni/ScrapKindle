@@ -1,11 +1,11 @@
-import re
 import tkinter as tk
 from tkinter import messagebox
-from datetime import datetime
+import subprocess
 import os
+import re
+from datetime import datetime
 import time
 from PIL import ImageGrab, Image
-import subprocess
 import pyautogui
 
 from region_selector import select_region
@@ -26,7 +26,7 @@ def make_output_folder():
     os.makedirs(images_dir, exist_ok=True)
     return output_dir, images_dir, timestamp
 
-def take_screenshots(region, total_pages, delay, countdown, outdir):
+def take_screenshots(region, total_pages, delay, countdown, outdir, page_key):
     print(f"📦 出力先: {outdir}")
     pad_len = get_zero_padding(total_pages)
 
@@ -42,7 +42,7 @@ def take_screenshots(region, total_pages, delay, countdown, outdir):
         screenshot.save(os.path.join(outdir, filename))
         print(f"📸 Saved: {filename}")
         if i != total_pages:
-            pyautogui.press("right")
+            pyautogui.press(page_key)  # ページ送りキーを押す
 
 def images_to_pdf(image_dir, output_pdf_path):
     try:
@@ -65,48 +65,54 @@ class App:
         self.region = None
 
         # 入力フォーム
-        # A: ページ数
+        # ページ数
         tk.Label(root, text="ページ数:").grid(row=0, column=0, sticky="e", padx=5, pady=2)
         self.page_entry = tk.Entry(root)
         self.page_entry.grid(row=0, column=1, sticky="we", padx=5, pady=2)
 
-        # B: ディレイ
+        # ディレイ
         tk.Label(root, text="ディレイ（秒）:").grid(row=1, column=0, sticky="e", padx=5, pady=2)
         self.delay_entry = tk.Entry(root)
         self.delay_entry.grid(row=1, column=1, sticky="we", padx=5, pady=2)
 
-        # C: カウントダウン
+        # カウントダウン
         tk.Label(root, text="カウントダウン:").grid(row=2, column=0, sticky="e", padx=5, pady=2)
         self.countdown_scale = tk.Scale(root, from_=1, to=10, orient="horizontal")
         self.countdown_scale.set(3)
         self.countdown_scale.grid(row=2, column=1, sticky="we", padx=5, pady=2)
 
-        # E: 範囲ラベル（右側に並べる）
+        # 範囲ラベル（右側に並べる）
         self.range_label = tk.Label(root, text="未選択")
-        self.range_label.grid(row=1, column=2, rowspan=2, sticky="w", padx=5)
+        self.range_label.grid(row=2, column=2, rowspan=2, sticky="w", padx=5)
 
-        # D: PDFファイル名
+        # PDFファイル名
         tk.Label(root, text="PDFファイル名:").grid(row=3, column=0, sticky="e", padx=5, pady=2)
         self.pdf_name_entry = tk.Entry(root)
         self.pdf_name_entry.grid(row=3, column=1, sticky="we", padx=5, pady=2)
 
-        # F: 範囲選択ボタン（右）
-        tk.Button(root, text="範囲を選ぶ", command=self.choose_region).grid(row=3, column=2, padx=5, pady=2)
+        # ページ送りキー入力欄
+        tk.Label(root, text="ページ送りキー\n（例: Right, PageDown, Space）").grid(row=4, column=0, sticky="e", padx=5, pady=2)
+        self.page_key_entry = tk.Entry(root)
+        self.page_key_entry.insert(0, "Right")  # デフォルトは右キー
+        self.page_key_entry.grid(row=4, column=1, sticky="we", padx=5, pady=2)
+
+        # 範囲選択ボタン（右）
+        tk.Button(root, text="範囲を選ぶ", command=self.choose_region).grid(row=4, column=2, padx=5, pady=2)
 
         # 📂 PDF作成後にフォルダを開くチェックボックス
         self.open_folder_var = tk.BooleanVar(value=True)
         tk.Checkbutton(root, text="PDF作成後にフォルダを開く", variable=self.open_folder_var).grid(
-            row=4, column=0, sticky="w", padx=5, pady=10
+            row=5, column=0, sticky="w", padx=5, pady=10
         )
 
         # 開始ボタン（青くしないなら普通のボタン）
         tk.Button(root, text="開始", command=self.start_capture).grid(
-            row=4, column=1, sticky="e", padx=5, pady=10
+            row=5, column=1, sticky="e", padx=5, pady=10
         )
 
         # 閉じるボタン
         tk.Button(root, text="閉じる", command=root.destroy).grid(
-            row=4, column=2, sticky="w", padx=5, pady=10
+            row=5, column=2, sticky="w", padx=5, pady=10
         )
         # 列拡張設定
         root.grid_columnconfigure(1, weight=1)
@@ -136,8 +142,11 @@ class App:
         if not pdfname.lower().endswith(".pdf"):
             pdfname += ".pdf"
 
+        # ページ送りキーの取得
+        page_key = self.page_key_entry.get().strip() or "Right"
+
         try:
-            take_screenshots(self.region, total_pages, delay, countdown, image_dir)
+            take_screenshots(self.region, total_pages, delay, countdown, image_dir, page_key)
             images_to_pdf(image_dir, os.path.join(output_dir, pdfname))
         except Exception as e:
             messagebox.showerror("エラー", f"処理中にエラーが発生しました: {e}")
